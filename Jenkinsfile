@@ -31,15 +31,18 @@ pipeline {
                 timeout(time: 10, unit: 'MINUTES') {
                     echo 'Downloading MASSTCLI...'
                     bat '''
-                        if not exist "%MASST_DIR%" (
+                        if not exist "%MASST_DIR%\\MASSTCLI.exe" (
                             echo Downloading MASSTCLI from %MASST_URL%...
                             powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; $ProgressPreference = 'SilentlyContinue'; Invoke-WebRequest -Uri '%MASST_URL%' -OutFile '%WORKSPACE%\\%MASST_ZIP%' -UseBasicParsing -TimeoutSec 300"
 
-                            echo Extracting MASSTCLI...
-                            powershell -Command "$ProgressPreference = 'SilentlyContinue'; Expand-Archive -LiteralPath '%WORKSPACE%\\%MASST_ZIP%' -DestinationPath '%WORKSPACE%\\tools' -Force"
+                            echo Extracting MASSTCLI to temporary location...
+                            powershell -Command "$ProgressPreference = 'SilentlyContinue'; if (Test-Path 'C:\\temp\\masstcli_extract') { Remove-Item 'C:\\temp\\masstcli_extract' -Recurse -Force -ErrorAction SilentlyContinue }; New-Item -ItemType Directory -Path 'C:\\temp\\masstcli_extract' -Force | Out-Null; Expand-Archive -LiteralPath '%WORKSPACE%\\%MASST_ZIP%' -DestinationPath 'C:\\temp\\masstcli_extract' -Force"
 
-                            echo Renaming extracted folder...
-                            powershell -Command "if (Test-Path '%WORKSPACE%\\tools\\MASSTCLI-v1.1.0-windows-amd64') { if (Test-Path '%WORKSPACE%\\tools\\MASSTCLI') { Remove-Item '%WORKSPACE%\\tools\\MASSTCLI' -Recurse -Force }; Rename-Item -Path '%WORKSPACE%\\tools\\MASSTCLI-v1.1.0-windows-amd64' -NewName 'MASSTCLI' -Force }"
+                            echo Moving MASSTCLI to workspace...
+                            powershell -Command "if (Test-Path '%WORKSPACE%\\tools\\MASSTCLI') { Remove-Item '%WORKSPACE%\\tools\\MASSTCLI' -Recurse -Force -ErrorAction SilentlyContinue }; Move-Item -Path 'C:\\temp\\masstcli_extract\\MASSTCLI-v1.1.0-windows-amd64' -Destination '%WORKSPACE%\\tools\\MASSTCLI' -Force"
+
+                            echo Cleaning up temporary files...
+                            powershell -Command "if (Test-Path 'C:\\temp\\masstcli_extract') { Remove-Item 'C:\\temp\\masstcli_extract' -Recurse -Force -ErrorAction SilentlyContinue }"
 
                         ) else (
                             echo MASSTCLI already exists, skipping download
@@ -53,36 +56,11 @@ pipeline {
             steps {
                 echo 'Verifying MASSTCLI installation...'
                 bat '''
-                    echo Searching for extracted MASSTCLI folder...
-
-                    set MASST_FOUND=0
-                    for /d %%D in ("%WORKSPACE%\\tools\\MASSTCLI-*windows-amd64") do (
-                        echo Found folder: %%~nxD
-
-                        if exist "%WORKSPACE%\\tools\\MASSTCLI" (
-                            rmdir /s /q "%WORKSPACE%\\tools\\MASSTCLI"
-                        )
-
-                        ren "%%D" MASSTCLI
-                        set MASST_FOUND=1
-                        goto :found
-                    )
-
-                    :found
-                    if %MASST_FOUND%==0 (
-                        echo Checking if MASSTCLI folder already exists...
-                        if exist "%MASST_DIR%\\MASSTCLI.exe" (
-                            echo MASSTCLI already exists and verified
-                            set MASST_FOUND=1
-                        ) else (
-                            echo ERROR: MASSTCLI extracted folder not found!
-                            exit /b 1
-                        )
-                    )
-
                     echo Verifying MASSTCLI executable...
                     if not exist "%MASST_DIR%\\MASSTCLI.exe" (
-                        echo ERROR: MASSTCLI.exe not found!
+                        echo ERROR: MASSTCLI.exe not found at %MASST_DIR%!
+                        echo Contents of tools directory:
+                        dir /s /b "%WORKSPACE%\\tools"
                         exit /b 1
                     )
 
@@ -165,6 +143,7 @@ pipeline {
 //             echo 'Cleaning up workspace...'
 //             bat '''
 //                 if exist "%WORKSPACE%\\%MASST_ZIP%" del "%WORKSPACE%\\%MASST_ZIP%"
+//                 powershell -Command "if (Test-Path 'C:\\temp\\masstcli_extract') { Remove-Item 'C:\\temp\\masstcli_extract' -Recurse -Force -ErrorAction SilentlyContinue }"
 //             '''
 //         }
     }
