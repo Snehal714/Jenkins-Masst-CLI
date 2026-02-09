@@ -115,10 +115,6 @@ pipeline {
                 '''
             }
         }
-
-
-        }
-
     post {
         success {
             echo 'MASSTCLI pipeline completed successfully!'
