@@ -6,7 +6,7 @@ pipeline {
         ARTIFACTS_DIR = "artifacts"
         CONFIG_FILE = "config.bm"
         MASST_ZIP = "MASSTCLI.zip"
-        MASST_URL = "https://example.com/MASSTCLI.zip"
+//         MASST_URL = "https://example.com/MASSTCLI.zip"
     }
 
     stages {
@@ -23,9 +23,9 @@ pipeline {
                 if not exist tools mkdir tools
 
                 if not exist %MASST_DIR% (
-                    echo Downloading MASSTCLI...
-                    powershell -Command "Invoke-WebRequest -Uri %MASST_URL% -OutFile %MASST_ZIP%"
-                    powershell -Command "Expand-Archive %MASST_ZIP% tools"
+                    echo Downloading MASSTCLI using curl...
+                    powershell -Command "curl -L \"https://storage.googleapis.com/masst-assets/Defender-Binary-Integrator/1.0.0/MacOS/MASSTCLI-v1.1.0-darwin-arm64.zip\" -o \"MASSTCLI.zip\""
+                    powershell -Command "Expand-Archive -Force \"MASSTCLI.zip\" tools"
                 ) else (
                     echo MASSTCLI already exists
                 )
