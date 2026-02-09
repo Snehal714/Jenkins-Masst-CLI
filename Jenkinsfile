@@ -28,22 +28,24 @@ pipeline {
 
         stage('Download MASSTCLI') {
             steps {
-                echo 'Downloading MASSTCLI...'
-                bat '''
-                    if not exist "%MASST_DIR%" (
-                        echo Downloading MASSTCLI from %MASST_URL%...
-                        powershell -Command "Invoke-WebRequest -Uri '%MASST_URL%' -OutFile '%WORKSPACE%\\%MASST_ZIP%'"
+                timeout(time: 10, unit: 'MINUTES') {
+                    echo 'Downloading MASSTCLI...'
+                    bat '''
+                        if not exist "%MASST_DIR%" (
+                            echo Downloading MASSTCLI from %MASST_URL%...
+                            powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; $ProgressPreference = 'SilentlyContinue'; Invoke-WebRequest -Uri '%MASST_URL%' -OutFile '%WORKSPACE%\\%MASST_ZIP%' -UseBasicParsing -TimeoutSec 300"
 
-                        echo Extracting MASSTCLI...
-                        powershell -Command "$zipPath = Join-Path '%WORKSPACE%' '%MASST_ZIP%'; $destPath = Join-Path '%WORKSPACE%' 'tools'; if (Test-Path $destPath\\MASSTCLI-v1.1.0-windows-amd64) { Remove-Item -Path $destPath\\MASSTCLI-v1.1.0-windows-amd64 -Recurse -Force -ErrorAction SilentlyContinue }; Expand-Archive -LiteralPath $zipPath -DestinationPath $destPath"
+                            echo Extracting MASSTCLI...
+                            powershell -Command "$ProgressPreference = 'SilentlyContinue'; Expand-Archive -LiteralPath '%WORKSPACE%\\%MASST_ZIP%' -DestinationPath '%WORKSPACE%\\tools' -Force"
 
-                        echo Renaming extracted folder...
-                        powershell -Command "if (Test-Path '%WORKSPACE%\\tools\\MASSTCLI-v1.1.0-windows-amd64') { if (Test-Path '%WORKSPACE%\\tools\\MASSTCLI') { Remove-Item '%WORKSPACE%\\tools\\MASSTCLI' -Recurse -Force }; Rename-Item -Path '%WORKSPACE%\\tools\\MASSTCLI-v1.1.0-windows-amd64' -NewName 'MASSTCLI' }"
+                            echo Renaming extracted folder...
+                            powershell -Command "if (Test-Path '%WORKSPACE%\\tools\\MASSTCLI-v1.1.0-windows-amd64') { if (Test-Path '%WORKSPACE%\\tools\\MASSTCLI') { Remove-Item '%WORKSPACE%\\tools\\MASSTCLI' -Recurse -Force }; Rename-Item -Path '%WORKSPACE%\\tools\\MASSTCLI-v1.1.0-windows-amd64' -NewName 'MASSTCLI' -Force }"
 
-                    ) else (
-                        echo MASSTCLI already exists, skipping download
-                    )
-                '''
+                        ) else (
+                            echo MASSTCLI already exists, skipping download
+                        )
+                    '''
+                }
             }
         }
 
@@ -68,8 +70,14 @@ pipeline {
 
                     :found
                     if %MASST_FOUND%==0 (
-                        echo ERROR: MASSTCLI extracted folder not found!
-                        exit /b 1
+                        echo Checking if MASSTCLI folder already exists...
+                        if exist "%MASST_DIR%\\MASSTCLI.exe" (
+                            echo MASSTCLI already exists and verified
+                            set MASST_FOUND=1
+                        ) else (
+                            echo ERROR: MASSTCLI extracted folder not found!
+                            exit /b 1
+                        )
                     )
 
                     echo Verifying MASSTCLI executable...
@@ -153,11 +161,11 @@ pipeline {
         failure {
             echo 'MASSTCLI pipeline failed. Please check the logs above.'
         }
-        always {
-            echo 'Cleaning up workspace...'
-            bat '''
-                if exist "%WORKSPACE%\\%MASST_ZIP%" del "%WORKSPACE%\\%MASST_ZIP%"
-            '''
-        }
+//         always {
+//             echo 'Cleaning up workspace...'
+//             bat '''
+//                 if exist "%WORKSPACE%\\%MASST_ZIP%" del "%WORKSPACE%\\%MASST_ZIP%"
+//             '''
+//         }
     }
 }
