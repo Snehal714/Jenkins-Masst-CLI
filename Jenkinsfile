@@ -82,96 +82,42 @@ pipeline {
             }
         }
 
-        stage('Analyze APK Files') {
+        stage('Run MASSTCLI') {
             steps {
-                echo 'Scanning APK files...'
-                script {
-                    bat '''
-                        REM Find the MASSTCLI executable
-                        set MASST_EXE=
-                        for %%f in ("%MASST_DIR%\\MASSTCLI*.exe") do (
-                            set MASST_EXE=%%~nxf
-                            goto :found_exe_apk
-                        )
+                echo 'Running MASSTCLI with configuration and input file...'
+                bat '''
+                    setlocal EnableDelayedExpansion
+                    set "MASST_EXE="
+                    for %%f in ("%MASST_DIR%\\MASSTCLI*.exe") do (
+                        set "MASST_EXE=%%~nxf"
+                        goto :found_exe
+                    )
 
-                        :found_exe_apk
-                        if not defined MASST_EXE (
-                            echo ERROR: MASSTCLI executable not found!
-                            exit /b 1
-                        )
+                    :found_exe
+                    if "!MASST_EXE!"=="" (
+                        echo ERROR: No MASSTCLI executable found in %MASST_DIR%!
+                        endlocal
+                        exit /b 1
+                    )
 
-                        echo Using executable: %MASST_EXE%
-                        echo Scanning directory: %ARTIFACTS_DIR%
+                    if not exist "%WORKSPACE%\\MyApp.aab" (
+                        echo ERROR: Input file MyApp.aab not found in workspace!
+                        echo Contents of workspace:
+                        dir /b "%WORKSPACE%"
+                        endlocal
+                        exit /b 1
+                    )
 
-                        set APK_FOUND=0
-                        for %%f in ("%ARTIFACTS_DIR%\\*.apk") do (
-                            if exist "%%f" (
-                                set APK_FOUND=1
-                                echo.
-                                echo ========================================
-                                echo Scanning APK: %%f
-                                echo ========================================
-                                "%MASST_DIR%\\%MASST_EXE%" -input="%%f" -config="%CONFIG_FILE%" -v=true
-                                if errorlevel 1 (
-                                    echo WARNING: Scan failed for %%f
-                                )
-                            )
-                        )
-                        if %APK_FOUND%==0 (
-                            echo No APK files found in %ARTIFACTS_DIR%
-                            echo Available files:
-                            dir /b "%ARTIFACTS_DIR%\\*.apk" 2>nul || echo None
-                        )
-                    '''
-                }
+                    echo Running MASSTCLI with input and config...
+                    "%MASST_DIR%\\!MASST_EXE!" -input "%WORKSPACE%\\MyApp.aab" -config "%WORKSPACE%\\%CONFIG_FILE%"
+
+                    endlocal
+                '''
             }
         }
 
-        stage('Analyze AAB Files') {
-            steps {
-                echo 'Scanning AAB files...'
-                script {
-                    bat '''
-                        REM Find the MASSTCLI executable
-                        set MASST_EXE=
-                        for %%f in ("%MASST_DIR%\\MASSTCLI*.exe") do (
-                            set MASST_EXE=%%~nxf
-                            goto :found_exe_aab
-                        )
 
-                        :found_exe_aab
-                        if not defined MASST_EXE (
-                            echo ERROR: MASSTCLI executable not found!
-                            exit /b 1
-                        )
-
-                        echo Using executable: %MASST_EXE%
-                        echo Scanning directory: %ARTIFACTS_DIR%
-
-                        set AAB_FOUND=0
-                        for %%f in ("%ARTIFACTS_DIR%\\*.aab") do (
-                            if exist "%%f" (
-                                set AAB_FOUND=1
-                                echo.
-                                echo ========================================
-                                echo Scanning AAB: %%f
-                                echo ========================================
-                                "%MASST_DIR%\\%MASST_EXE%" -input="%%f" -config="%CONFIG_FILE%" -v=true
-                                if errorlevel 1 (
-                                    echo WARNING: Scan failed for %%f
-                                )
-                            )
-                        )
-                        if %AAB_FOUND%==0 (
-                            echo No AAB files found in %ARTIFACTS_DIR%
-                            echo Available files:
-                            dir /b "%ARTIFACTS_DIR%\\*.aab" 2>nul || echo None
-                        )
-                    '''
-                }
-            }
         }
-    }
 
     post {
         success {
