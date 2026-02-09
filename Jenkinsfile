@@ -7,6 +7,7 @@ pipeline {
         CONFIG_FILE = "config.bm"
         MASST_ZIP = "MASSTCLI.zip"
         MASST_URL = "https://storage.googleapis.com/masst-assets/Defender-Binary-Integrator/1.0.0/Windows/MASSTCLI-v1.1.0-windows-amd64.zip"
+        MASST_EXE = "MASSTCLI-v1_1_0-209-windows-amd64.exe"
     }
 
     stages {
@@ -31,7 +32,7 @@ pipeline {
                 timeout(time: 10, unit: 'MINUTES') {
                     echo 'Downloading MASSTCLI...'
                     bat '''
-                        if not exist "%MASST_DIR%\\MASSTCLI.exe" (
+                        if not exist "%MASST_DIR%\\%MASST_EXE%" (
                             echo Downloading MASSTCLI from %MASST_URL%...
                             powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; $ProgressPreference = 'SilentlyContinue'; Invoke-WebRequest -Uri '%MASST_URL%' -OutFile '%WORKSPACE%\\%MASST_ZIP%' -UseBasicParsing -TimeoutSec 300"
 
@@ -57,15 +58,15 @@ pipeline {
                 echo 'Verifying MASSTCLI installation...'
                 bat '''
                     echo Verifying MASSTCLI executable...
-                    if not exist "%MASST_DIR%\\MASSTCLI.exe" (
-                        echo ERROR: MASSTCLI.exe not found at %MASST_DIR%!
+                    if not exist "%MASST_DIR%\\%MASST_EXE%" (
+                        echo ERROR: %MASST_EXE% not found at %MASST_DIR%!
                         echo Contents of tools directory:
                         dir /s /b "%WORKSPACE%\\tools"
                         exit /b 1
                     )
 
                     echo Running MASSTCLI version check...
-                    "%MASST_DIR%\\MASSTCLI.exe" --version
+                    "%MASST_DIR%\\%MASST_EXE%" --version
 
                     echo.
                     echo ========================================
@@ -90,7 +91,7 @@ pipeline {
 //                                 echo ========================================
 //                                 echo Scanning APK: %%f
 //                                 echo ========================================
-//                                 "%MASST_DIR%\\MASSTCLI.exe" -input="%%f" -config="%CONFIG_FILE%" -v=true
+//                                 "%MASST_DIR%\\%MASST_EXE%" -input="%%f" -config="%CONFIG_FILE%" -v=true
 //                                 if errorlevel 1 (
 //                                     echo WARNING: Scan failed for %%f
 //                                 )
@@ -117,7 +118,7 @@ pipeline {
 //                                 echo ========================================
 //                                 echo Scanning AAB: %%f
 //                                 echo ========================================
-//                                 "%MASST_DIR%\\MASSTCLI.exe" -input="%%f" -config="%CONFIG_FILE%" -v=true
+//                                 "%MASST_DIR%\\%MASST_EXE%" -input="%%f" -config="%CONFIG_FILE%" -v=true
 //                                 if errorlevel 1 (
 //                                     echo WARNING: Scan failed for %%f
 //                                 )
