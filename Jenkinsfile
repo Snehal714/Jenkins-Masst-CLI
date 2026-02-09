@@ -6,26 +6,36 @@ pipeline {
         ARTIFACTS_DIR = "artifacts"
         CONFIG_FILE = "config.bm"
         MASST_ZIP = "MASSTCLI.zip"
-//         MASST_URL = "https://example.com/MASSTCLI.zip"
+        MASST_URL = "https://storage.googleapis.com/masst-assets/Defender-Binary-Integrator/1.0.0/Windows/MASSTCLI-v1.1.0-windows-amd64.zip"
     }
 
     stages {
 
-        stage('Checkout') {
+        stage('Checkout SCM') {
             steps {
                 checkout scm
+            }
+        }
+
+        stage('Prepare Tools Directory') {
+            steps {
+                bat '''
+                REM Create tools folder if it doesn't exist
+                if not exist tools mkdir tools
+                '''
             }
         }
 
         stage('Download MASSTCLI') {
             steps {
                 bat '''
-                if not exist tools mkdir tools
-
-                if not exist %MASST_DIR% (
+                REM Download MASSTCLI zip only if it doesn't exist
+                if not exist "%MASST_DIR%" (
                     echo Downloading MASSTCLI using curl.exe...
-                    powershell -Command "curl.exe -L \"https://storage.googleapis.com/masst-assets/Defender-Binary-Integrator/1.0.0/Windows/MASSTCLI-v1.1.0-windows-amd64.zip\" -o \"MASSTCLI.zip\""
-                    powershell -Command "Expand-Archive -Force \"MASSTCLI.zip\" tools"
+                    powershell -Command "curl.exe -L \\"%MASST_URL%\\" -o \\"%WORKSPACE%\\\\%MASST_ZIP%\\""
+
+                    echo Extracting MASSTCLI...
+                    powershell -Command "Expand-Archive -Force -LiteralPath \\"%WORKSPACE%\\\\%MASST_ZIP%\\" -DestinationPath \\"%WORKSPACE%\\\\tools\\""
                 ) else (
                     echo MASSTCLI already exists
                 )
@@ -33,13 +43,15 @@ pipeline {
             }
         }
 
-
         stage('Verify MASSTCLI') {
             steps {
                 bat '''
-                if not exist %MASST_DIR%\\MASSTCLI.exe (
+                REM Verify MASSTCLI executable exists
+                if not exist "%MASST_DIR%\\MASSTCLI.exe" (
                     echo MASSTCLI executable not found
                     exit /b 1
+                ) else (
+                    echo MASSTCLI verified successfully
                 )
                 '''
             }
@@ -48,13 +60,11 @@ pipeline {
         stage('Analyze APK') {
             steps {
                 bat '''
-                if exist %ARTIFACTS_DIR%\\*.apk (
-                    for %%f in (%ARTIFACTS_DIR%\\*.apk) do (
+                REM Scan APK files
+                if exist "%ARTIFACTS_DIR%\\*.apk" (
+                    for %%f in ("%ARTIFACTS_DIR%\\*.apk") do (
                         echo Scanning %%f
-                        %MASST_DIR%\\MASSTCLI.exe ^
-                          -input="%%f" ^
-                          -config="%CONFIG_FILE%" ^
-                          -v=true
+                        "%MASST_DIR%\\MASSTCLI.exe" -input="%%f" -config="%CONFIG_FILE%" -v=true
                     )
                 ) else (
                     echo No APK files found
@@ -66,13 +76,11 @@ pipeline {
         stage('Analyze AAB') {
             steps {
                 bat '''
-                if exist %ARTIFACTS_DIR%\\*.aab (
-                    for %%f in (%ARTIFACTS_DIR%\\*.aab) do (
+                REM Scan AAB files
+                if exist "%ARTIFACTS_DIR%\\*.aab" (
+                    for %%f in ("%ARTIFACTS_DIR%\\*.aab") do (
                         echo Scanning %%f
-                        %MASST_DIR%\\MASSTCLI.exe ^
-                          -input="%%f" ^
-                          -config="%CONFIG_FILE%" ^
-                          -v=true
+                        "%MASST_DIR%\\MASSTCLI.exe" -input="%%f" -config="%CONFIG_FILE%" -v=true
                     )
                 ) else (
                     echo No AAB files found
