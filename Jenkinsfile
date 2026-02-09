@@ -23,8 +23,8 @@ pipeline {
                 if not exist tools mkdir tools
 
                 if not exist %MASST_DIR% (
-                    echo Downloading MASSTCLI using curl...
-                    powershell -Command "curl -L \"https://storage.googleapis.com/masst-assets/Defender-Binary-Integrator/1.0.0/MacOS/MASSTCLI-v1.1.0-darwin-arm64.zip\" -o \"MASSTCLI.zip\""
+                    echo Downloading MASSTCLI using curl.exe...
+                    powershell -Command "curl.exe -L \"https://storage.googleapis.com/masst-assets/Defender-Binary-Integrator/1.0.0/Windows/MASSTCLI-v1.1.0-windows-amd64.zip\" -o \"MASSTCLI.zip\""
                     powershell -Command "Expand-Archive -Force \"MASSTCLI.zip\" tools"
                 ) else (
                     echo MASSTCLI already exists
@@ -32,6 +32,7 @@ pipeline {
                 '''
             }
         }
+
 
         stage('Verify MASSTCLI') {
             steps {
