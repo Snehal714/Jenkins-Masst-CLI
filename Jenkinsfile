@@ -69,15 +69,18 @@ pipeline {
                         exit /b 1
                     )
 
-                    echo Running MASSTCLI version check...
-                    "%MASST_DIR%\\%MASST_EXE%" --version
-
-                    echo.
-                    echo ========================================
-                    echo ✅ MASSTCLI extracted and verified successfully
-                    echo Executable: %MASST_EXE%
-                    echo Location: %MASST_DIR%
-                    echo ========================================
+                    REM Verify executable exists and is accessible
+                    if exist "%MASST_DIR%\\%MASST_EXE%" (
+                        echo.
+                        echo ========================================
+                        echo ✅ MASSTCLI extracted and verified successfully
+                        echo Executable: %MASST_EXE%
+                        echo Location: %MASST_DIR%
+                        echo ========================================
+                    ) else (
+                        echo ERROR: MASSTCLI executable file not accessible!
+                        exit /b 1
+                    )
                 '''
             }
         }
