@@ -32,10 +32,10 @@ pipeline {
                 REM Download MASSTCLI zip only if it doesn't exist
                 if not exist "%MASST_DIR%" (
                     echo Downloading MASSTCLI using curl.exe...
-                    powershell -Command "curl.exe -L \\"%MASST_URL%\\" -o \\"%WORKSPACE%\\\\%MASST_ZIP%\\""
+                    powershell -Command "curl.exe -L \\"%MASST_URL%\\" -o \\"./%MASST_ZIP%\\""
 
                     echo Extracting MASSTCLI...
-                    powershell -Command "Expand-Archive -Force -LiteralPath \\"%WORKSPACE%\\\\%MASST_ZIP%\\" -DestinationPath \\"%WORKSPACE%\\\\tools\\""
+                    powershell -Command "Expand-Archive -Force -LiteralPath \\"./%MASST_ZIP%\\" -DestinationPath \\"./tools\\""
                 ) else (
                     echo MASSTCLI already exists
                 )
@@ -61,8 +61,8 @@ pipeline {
             steps {
                 bat '''
                 REM Scan APK files
-                if exist "%ARTIFACTS_DIR%\\*.apk" (
-                    for %%f in ("%ARTIFACTS_DIR%\\*.apk") do (
+                if exist "./%ARTIFACTS_DIR%\\*.apk" (
+                    for %%f in ("./%ARTIFACTS_DIR%\\*.apk") do (
                         echo Scanning %%f
                         "%MASST_DIR%\\MASSTCLI.exe" -input="%%f" -config="%CONFIG_FILE%" -v=true
                     )
@@ -77,8 +77,8 @@ pipeline {
             steps {
                 bat '''
                 REM Scan AAB files
-                if exist "%ARTIFACTS_DIR%\\*.aab" (
-                    for %%f in ("%ARTIFACTS_DIR%\\*.aab") do (
+                if exist "./%ARTIFACTS_DIR%\\*.aab" (
+                    for %%f in ("./%ARTIFACTS_DIR%\\*.aab") do (
                         echo Scanning %%f
                         "%MASST_DIR%\\MASSTCLI.exe" -input="%%f" -config="%CONFIG_FILE%" -v=true
                     )
