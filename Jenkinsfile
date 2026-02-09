@@ -49,6 +49,49 @@ pipeline {
             }
         }
 
+        stage('Verify MASSTCLI Download') {
+            steps {
+                echo 'Verifying MASSTCLI installation...'
+                bat '''
+                    echo Searching for extracted MASSTCLI folder...
+
+                    set MASST_FOUND=0
+                    for /d %%D in ("%WORKSPACE%\\tools\\MASSTCLI-*windows-amd64") do (
+                        echo Found folder: %%~nxD
+
+                        if exist "%WORKSPACE%\\tools\\MASSTCLI" (
+                            rmdir /s /q "%WORKSPACE%\\tools\\MASSTCLI"
+                        )
+
+                        ren "%%D" MASSTCLI
+                        set MASST_FOUND=1
+                        goto :found
+                    )
+
+                    :found
+                    if %MASST_FOUND%==0 (
+                        echo ERROR: MASSTCLI extracted folder not found!
+                        exit /b 1
+                    )
+
+                    echo Verifying MASSTCLI executable...
+                    if not exist "%MASST_DIR%\\MASSTCLI.exe" (
+                        echo ERROR: MASSTCLI.exe not found!
+                        exit /b 1
+                    )
+
+                    echo Running MASSTCLI version check...
+                    "%MASST_DIR%\\MASSTCLI.exe" --version
+
+                    echo.
+                    echo ========================================
+                    echo ✅ MASSTCLI downloaded and verified successfully
+                    echo ========================================
+                '''
+            }
+        }
+
+
 
 //         stage('Analyze APK Files') {
 //             steps {
