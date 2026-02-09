@@ -40,8 +40,6 @@ pipeline {
                         echo Renaming extracted folder...
                         powershell -Command "if (Test-Path '%WORKSPACE%\\tools\\MASSTCLI-v1.1.0-windows-amd64') { if (Test-Path '%WORKSPACE%\\tools\\MASSTCLI') { Remove-Item '%WORKSPACE%\\tools\\MASSTCLI' -Recurse -Force }; Rename-Item -Path '%WORKSPACE%\\tools\\MASSTCLI-v1.1.0-windows-amd64' -NewName 'MASSTCLI' }"
 
-                        echo Cleaning up zip file...
-                        del "%WORKSPACE%\\%MASST_ZIP%"
                     ) else (
                         echo MASSTCLI already exists, skipping download
                     )
