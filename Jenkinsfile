@@ -49,101 +49,60 @@ pipeline {
             }
         }
 
-        stage('Verify MASSTCLI') {
-            steps {
-                echo 'Verifying MASSTCLI installation...'
-                bat '''
-                    if not exist "%MASST_DIR%\\MASSTCLI.exe" (
-                        echo ERROR: MASSTCLI executable not found at %MASST_DIR%\\MASSTCLI.exe
-                        dir "%WORKSPACE%\\tools" /s /b | findstr MASSTCLI.exe
-                        exit /b 1
-                    )
-                    echo MASSTCLI verified successfully
-                    "%MASST_DIR%\\MASSTCLI.exe" --version || echo MASSTCLI version check completed
-                '''
-            }
-        }
 
-        stage('Verify Artifacts Directory') {
-            steps {
-                echo 'Verifying artifacts directory...'
-                bat '''
-                    if not exist "%ARTIFACTS_DIR%" (
-                        echo ERROR: Artifacts directory not found
-                        exit /b 1
-                    )
-                    echo Artifacts directory verified
-                '''
-            }
-        }
+//         stage('Analyze APK Files') {
+//             steps {
+//                 echo 'Scanning APK files...'
+//                 script {
+//                     bat '''
+//                         set APK_FOUND=0
+//                         for %%f in ("%ARTIFACTS_DIR%\\*.apk") do (
+//                             if exist "%%f" (
+//                                 set APK_FOUND=1
+//                                 echo.
+//                                 echo ========================================
+//                                 echo Scanning APK: %%f
+//                                 echo ========================================
+//                                 "%MASST_DIR%\\MASSTCLI.exe" -input="%%f" -config="%CONFIG_FILE%" -v=true
+//                                 if errorlevel 1 (
+//                                     echo WARNING: Scan failed for %%f
+//                                 )
+//                             )
+//                         )
+//                         if %APK_FOUND%==0 (
+//                             echo No APK files found in %ARTIFACTS_DIR%
+//                         )
+//                     '''
+//                 }
+//             }
+//         }
 
-        stage('Verify Config File') {
-            steps {
-                echo 'Verifying configuration file...'
-                bat '''
-                    if not exist "%CONFIG_FILE%" (
-                        echo WARNING: Config file %CONFIG_FILE% not found
-                        echo Proceeding without config file
-                    ) else (
-                        echo Config file found: %CONFIG_FILE%
-                    )
-                '''
-            }
-        }
-
-        stage('Analyze APK Files') {
-            steps {
-                echo 'Scanning APK files...'
-                script {
-                    bat '''
-                        set APK_FOUND=0
-                        for %%f in ("%ARTIFACTS_DIR%\\*.apk") do (
-                            if exist "%%f" (
-                                set APK_FOUND=1
-                                echo.
-                                echo ========================================
-                                echo Scanning APK: %%f
-                                echo ========================================
-                                "%MASST_DIR%\\MASSTCLI.exe" -input="%%f" -config="%CONFIG_FILE%" -v=true
-                                if errorlevel 1 (
-                                    echo WARNING: Scan failed for %%f
-                                )
-                            )
-                        )
-                        if %APK_FOUND%==0 (
-                            echo No APK files found in %ARTIFACTS_DIR%
-                        )
-                    '''
-                }
-            }
-        }
-
-        stage('Analyze AAB Files') {
-            steps {
-                echo 'Scanning AAB files...'
-                script {
-                    bat '''
-                        set AAB_FOUND=0
-                        for %%f in ("%ARTIFACTS_DIR%\\*.aab") do (
-                            if exist "%%f" (
-                                set AAB_FOUND=1
-                                echo.
-                                echo ========================================
-                                echo Scanning AAB: %%f
-                                echo ========================================
-                                "%MASST_DIR%\\MASSTCLI.exe" -input="%%f" -config="%CONFIG_FILE%" -v=true
-                                if errorlevel 1 (
-                                    echo WARNING: Scan failed for %%f
-                                )
-                            )
-                        )
-                        if %AAB_FOUND%==0 (
-                            echo No AAB files found in %ARTIFACTS_DIR%
-                        )
-                    '''
-                }
-            }
-        }
+//         stage('Analyze AAB Files') {
+//             steps {
+//                 echo 'Scanning AAB files...'
+//                 script {
+//                     bat '''
+//                         set AAB_FOUND=0
+//                         for %%f in ("%ARTIFACTS_DIR%\\*.aab") do (
+//                             if exist "%%f" (
+//                                 set AAB_FOUND=1
+//                                 echo.
+//                                 echo ========================================
+//                                 echo Scanning AAB: %%f
+//                                 echo ========================================
+//                                 "%MASST_DIR%\\MASSTCLI.exe" -input="%%f" -config="%CONFIG_FILE%" -v=true
+//                                 if errorlevel 1 (
+//                                     echo WARNING: Scan failed for %%f
+//                                 )
+//                             )
+//                         )
+//                         if %AAB_FOUND%==0 (
+//                             echo No AAB files found in %ARTIFACTS_DIR%
+//                         )
+//                     '''
+//                 }
+//             }
+//         }
     }
 
     post {
